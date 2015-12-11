@@ -31,7 +31,8 @@ public:
     {
         ANIM_IDLE = 0,
         ANIM_JUMP = 1,
-        ANIM_RUN = 2
+        ANIM_RUN  = 2,
+        ANIM_FALL = 3
     };
 
     UPROPERTY(EditAnywhere)
@@ -49,7 +50,10 @@ public:
     FVector m_vVelocity;
     FVector m_vGravity;
 
-    EAnimState m_animState;
+    int m_nGrounded;
+    int m_nMoving;
+
+    EAnimState m_nAnimState;
 
     class UHeroMovementComponent* m_pMovementComponent;
 	

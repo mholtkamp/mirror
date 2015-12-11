@@ -7,6 +7,7 @@
 #define DEAD_ZONE 0.2f
 #define CAMERA_ROT_SPEED 200.0f
 #define SPRINGARM_PITCH -20.0f
+#define GROUNDED_CHECK_DISTANCE 20.0f
 
 static UAnimSequence* s_pAnimIdle;
 static UAnimSequence* s_pAnimRun;
@@ -63,13 +64,16 @@ AHero::AHero()
     m_vVelocity = FVector::ZeroVector;
     m_vGravity = FVector(0.0f, 0.0f, -980.0f);
     
-    m_animState = ANIM_IDLE;
+    m_nAnimState = ANIM_IDLE;
 
     m_pMovementComponent = CreateDefaultSubobject<UHeroMovementComponent>(TEXT("Movement Component"));
     m_pMovementComponent->UpdatedComponent = RootComponent;
     m_pMovementComponent->m_pMesh = m_pMesh;
     m_pMovementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Y);
     m_pMovementComponent->bConstrainToPlane = 1;
+
+    m_nGrounded = 0;
+    m_nMoving   = 0;
 }
 
 // Called when the game starts or when spawned
@@ -94,18 +98,81 @@ void AHero::Tick( float DeltaTime )
     FHitResult hit;
     vNewPos = GetActorLocation();
     vNewPos.Z += m_vVelocity.Z * DeltaTime;
-    if (!SetActorLocation(vNewPos, 1, &hit))
+    SetActorLocation(vNewPos, 1, &hit);
+
+    if (hit.Actor != 0)
     {
         m_vVelocity.Z = 0.0f;
+        m_nGrounded = 1;
+    }
+    else
+    {
+        // if on previous frame, was grounded
+        if (m_nGrounded)
+        {
+            FVector vCurLoc = GetActorLocation();
+            vNewPos = vCurLoc;
+            vNewPos.Z -= 20.0f;
+            SetActorLocation(vNewPos, 1, &hit);
+            
+            if (hit.Actor != 0)
+            {
+                // Redundant, maybe remove.
+                m_nGrounded = 1;   
+            }
+            else
+            {
+                SetActorLocation(vCurLoc, 0);
+                m_nGrounded = 0;
+            }
+        }
+        else
+        {
+            m_nGrounded = 0;
+        }
+        
     }
 
 
-    // Check if jump animation has ended
-    if (m_animState == ANIM_JUMP)
+    // Update animations
+    if (m_nAnimState == ANIM_JUMP)
     {
-        if (!m_pMesh->IsPlaying())
+        if (m_nGrounded)
         {
             m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+            m_nAnimState = ANIM_IDLE;
+        }
+
+        if (!m_pMesh->IsPlaying())
+        {
+            m_pMesh->PlayAnimation(s_pAnimFall, 1);
+            m_nAnimState = ANIM_FALL;
+        }
+    }
+    else if (m_nAnimState == ANIM_FALL)
+    {
+        if (m_nGrounded)
+        {
+            m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+            m_nAnimState = ANIM_IDLE;
+        }
+    }
+    
+    if (m_nAnimState == ANIM_IDLE)
+    {
+        if (m_nMoving)
+        {
+            m_pMesh->PlayAnimation(s_pAnimRun, 1);
+            m_nAnimState = ANIM_RUN;
+        }
+    }
+
+    if (m_nAnimState == ANIM_RUN)
+    {
+        if (!m_nMoving)
+        {
+            m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+            m_nAnimState = ANIM_IDLE;
         }
     }
 }
@@ -121,13 +188,16 @@ void AHero::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 
 void AHero::Jump()
 {
-   m_vVelocity.Z = 1000.0f;
+   if (m_nGrounded)
+   {
+        m_vVelocity.Z = 1000.0f;
 
-   m_pMesh->SetAnimation(s_pAnimFall);
-   m_pMesh->PlayAnimation(s_pAnimJump, 0);
+        m_pMesh->SetAnimation(s_pAnimFall);
+        m_pMesh->PlayAnimation(s_pAnimJump, 0);
 
-   m_animState = ANIM_JUMP;
-   
+        m_nAnimState = ANIM_JUMP;
+        m_nGrounded = 0;
+   }
 }
 
 void AHero::MoveRight(float fAxisValue)
@@ -135,5 +205,14 @@ void AHero::MoveRight(float fAxisValue)
     if (m_pMovementComponent && (m_pMovementComponent->UpdatedComponent == RootComponent))
     {
         m_pMovementComponent->AddInputVector(FVector(1.0f, 0.0f, 0.0f) * fAxisValue);
+    }
+
+    if (FMath::Abs(fAxisValue) > DEAD_ZONE)
+    {
+        m_nMoving = 1;
+    }
+    else
+    {
+        m_nMoving = 0;
     }
 }
