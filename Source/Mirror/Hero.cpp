@@ -6,7 +6,8 @@
 
 #define DEAD_ZONE 0.2f
 #define CAMERA_ROT_SPEED 200.0f
-#define SPRINGARM_PITCH -20.0f
+#define SPRINGARM_PITCH -5.0f
+#define SPRINGARM_LENGTH 1300.0f
 #define GROUNDED_CHECK_DISTANCE 20.0f
 #define HERO_GRAVITY -3000.0f
 #define DEFAULT_HERO_SPEED 1000.0f;
@@ -51,7 +52,7 @@ AHero::AHero()
     }
 
     m_pSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-    m_pSpringArm->TargetArmLength = 950.0f;
+    m_pSpringArm->TargetArmLength = SPRINGARM_LENGTH;
     m_pSpringArm->SetRelativeRotation(FRotator(SPRINGARM_PITCH, -90, 0.0f));
     m_pSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
 
