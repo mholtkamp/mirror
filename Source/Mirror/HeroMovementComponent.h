@@ -17,7 +17,8 @@ class MIRROR_API UHeroMovementComponent : public UPawnMovementComponent
 
 public:
 
-    void* m_pMesh;
+    float m_fSpeed = 0.0f;
+    void* m_pMesh  = 0;
 	
 	
 };

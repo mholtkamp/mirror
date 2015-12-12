@@ -27,6 +27,8 @@ public:
 
     void MoveRight(float fAxisValue);
 
+    void SetVelocity(FVector vNewVel);
+
     enum EAnimState
     {
         ANIM_IDLE = 0,

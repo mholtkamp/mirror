@@ -8,6 +8,8 @@
 #define CAMERA_ROT_SPEED 200.0f
 #define SPRINGARM_PITCH -20.0f
 #define GROUNDED_CHECK_DISTANCE 20.0f
+#define HERO_GRAVITY -3000.0f
+#define DEFAULT_HERO_SPEED 1000.0f;
 
 static UAnimSequence* s_pAnimIdle;
 static UAnimSequence* s_pAnimRun;
@@ -49,9 +51,9 @@ AHero::AHero()
     }
 
     m_pSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-    m_pSpringArm->TargetArmLength = 850.0f;
-    m_pSpringArm->SetRelativeRotation(FRotator(SPRINGARM_PITCH, -90.0f, 0.0f));
-    m_pSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 150.0f));
+    m_pSpringArm->TargetArmLength = 950.0f;
+    m_pSpringArm->SetRelativeRotation(FRotator(SPRINGARM_PITCH, -90, 0.0f));
+    m_pSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
 
     m_pCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
         
@@ -62,13 +64,14 @@ AHero::AHero()
     m_pCamera->AttachTo(m_pSpringArm);
 
     m_vVelocity = FVector::ZeroVector;
-    m_vGravity = FVector(0.0f, 0.0f, -980.0f);
+    m_vGravity = FVector(0.0f, 0.0f, HERO_GRAVITY);
     
     m_nAnimState = ANIM_IDLE;
 
     m_pMovementComponent = CreateDefaultSubobject<UHeroMovementComponent>(TEXT("Movement Component"));
     m_pMovementComponent->UpdatedComponent = RootComponent;
     m_pMovementComponent->m_pMesh = m_pMesh;
+    m_pMovementComponent->m_fSpeed = DEFAULT_HERO_SPEED;
     m_pMovementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Y);
     m_pMovementComponent->bConstrainToPlane = 1;
 
@@ -133,7 +136,6 @@ void AHero::Tick( float DeltaTime )
         
     }
 
-
     // Update animations
     if (m_nAnimState == ANIM_JUMP)
     {
@@ -175,6 +177,9 @@ void AHero::Tick( float DeltaTime )
             m_nAnimState = ANIM_IDLE;
         }
     }
+
+    UpdateComponentTransforms();
+    UpdateOverlaps();
 }
 
 // Called to bind functionality to input
@@ -190,7 +195,7 @@ void AHero::Jump()
 {
    if (m_nGrounded)
    {
-        m_vVelocity.Z = 1000.0f;
+        m_vVelocity.Z = 2000.0f;
 
         m_pMesh->SetAnimation(s_pAnimFall);
         m_pMesh->PlayAnimation(s_pAnimJump, 0);
@@ -215,4 +220,9 @@ void AHero::MoveRight(float fAxisValue)
     {
         m_nMoving = 0;
     }
+}
+
+void AHero::SetVelocity(FVector vNewVel)
+{
+    m_vVelocity = vNewVel;
 }
