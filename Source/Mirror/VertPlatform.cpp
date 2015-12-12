@@ -15,6 +15,8 @@ AVertPlatform::AVertPlatform()
 	m_pMesh->SetCollisionProfileName(TEXT("BlockAll"));
     m_pBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
     m_pBox->SetCollisionProfileName(TEXT("OverlapAll"));
+    m_pBox->InitBoxExtent(FVector(260.0f, 117.0f, 30.0f));
+    m_pBox->SetRelativeLocation(FVector(0.0f, 0.0f, 146.846));
 
 	if (ofMesh.Succeeded())
 	{
@@ -67,12 +69,7 @@ void AVertPlatform::Tick( float DeltaTime )
     {
         vNewPos = m_pHero->GetActorLocation() + FVector(0.0f, 0.0f, 130.0f)*m_fDir*DeltaTime;
         m_pHero->SetActorLocation(vNewPos);
-        m_pHero->UpdateComponentTransforms();
-        m_pHero->UpdateOverlaps();
-
     }
-
-
 }
 
 void AVertPlatform::OnOverlapBegin(AActor* pOther)
@@ -90,7 +87,7 @@ void AVertPlatform::OnOverlapEnd(AActor* pOther)
     if (Cast<AHero>(pOther) != 0)
     {
         m_pHero = 0;
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, "Off the Cloud");
+        //GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, "Off the Cloud");
     }
     
 }
