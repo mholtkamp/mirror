@@ -3,16 +3,18 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Skyrot.generated.h"
+#include "Skyrot.h"
+#include "ModeShifter.generated.h"
+
 
 UCLASS()
-class MIRROR_API ASkyrot : public AActor
+class MIRROR_API AModeShifter : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASkyrot();
+	AModeShifter();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -20,12 +22,15 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-    void SetMirrorMode(int nMirror);
+    UFUNCTION()
+    void OnOverlapBegin(AActor* pOther);
 
     UPROPERTY(EditAnywhere)
-    UStaticMeshComponent* m_pMesh;
+	bool m_bMirror;
+	
+    UPROPERTY(EditAnywhere)
+    UBoxComponent* m_pBox;
 
     UPROPERTY(EditAnywhere)
-    AActor* m_pHero;
-
+    ASkyrot* m_pSkyrot;
 };

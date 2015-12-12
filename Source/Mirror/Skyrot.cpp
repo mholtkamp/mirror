@@ -61,3 +61,14 @@ void ASkyrot::Tick( float DeltaTime )
     SetActorRotation(FRotator(0.0f, -1.0f * m_pHero->GetActorLocation().X * ROTATION_RATE, 0.0f));
 }
 
+void ASkyrot::SetMirrorMode(int nMirror)
+{
+    if (nMirror == 0)
+    {
+        m_pMesh->SetMaterial(0, s_pRealMat);
+    }
+    else
+    {
+        m_pMesh->SetMaterial(0, s_pMirrorMat);
+    }
+}

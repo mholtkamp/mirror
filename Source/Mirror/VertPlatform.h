@@ -37,4 +37,13 @@ public:
     float m_fDir;
 
     AActor* m_pHero;
+
+    UPROPERTY(EditAnywhere)
+    float m_fSpeed;
+
+    UPROPERTY(EditAnywhere)
+    float m_fMaxDistance;
+
+    UPROPERTY(EditAnywhere)
+    bool m_bHorizontal;
 };
