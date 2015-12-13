@@ -31,6 +31,8 @@ public:
 
     void SetMirrorMode(int nMirror);
 
+    void Kill();
+
     enum EAnimState
     {
         ANIM_IDLE = 0,

@@ -3,16 +3,23 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Bomber.generated.h"
+#include "Bullet.generated.h"
 
 UCLASS()
-class MIRROR_API ABomber : public AActor
+class MIRROR_API ABullet : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
+
+    enum ETerminationMode
+    {
+        TERMINATE_MIN_Z = 0,
+        TERMINATE_MAX_Z = 1,
+        TERMINATE_TIME  = 2
+    };
 	// Sets default values for this actor's properties
-	ABomber();
+	ABullet();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -23,30 +30,16 @@ public:
     UFUNCTION()
     void OnOverlapBegin(AActor* pOther);
 
-    void FireBullet();
-
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* m_pMesh;
 
-    UPROPERTY(EditAnywhere)
-    UParticleSystemComponent* m_pParticle;
+    FVector m_vVelocity;
+    FVector m_vAcceleration;
 
-    UPROPERTY(EditAnywhere)
-    float m_fSpeed;
+    float m_fMinZ;
+    float m_fMaxZ;
+    float m_fMaxTime;
+    int m_nTerminationMode;
 
-    UPROPERTY(EditAnywhere)
-    float m_fRange;
-
-    UPROPERTY(EditAnywhere)
-    float m_fBulletSpeed;
-
-    UPROPERTY(EditAnywhere)
-    float m_fFireTime;
-
-    UPROPERTY(EditAnywhere)
-    float m_fBulletLifetime;
-
-    FVector m_vOrigin;
-    float m_fDirection;
     float m_fTime;
 };

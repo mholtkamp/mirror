@@ -252,3 +252,8 @@ void AHero::SetMirrorMode(int nMirror)
         m_pMesh->SetMaterial(0, s_pMirrorMat);
     }
 }
+
+void AHero::Kill()
+{
+    GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Yellow, TEXT("You died :["));
+}
