@@ -81,6 +81,8 @@ AHero::AHero()
     m_pSpringArm->SetRelativeRotation(FRotator(SPRINGARM_PITCH, -90, 0.0f));
     m_pSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
     m_pSpringArm->bEnableCameraLag = 1;
+    m_pSpringArm->bDoCollisionTest = 0;
+
 
     m_pCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     m_pCamera->PostProcessBlendWeight = 1.0f;
