@@ -33,6 +33,10 @@ public:
 
     void Kill();
 
+    void UpdateDeathSequence(float fDeltaTime);
+
+    void Spawn();
+
     enum EAnimState
     {
         ANIM_IDLE = 0,
@@ -53,6 +57,9 @@ public:
     UPROPERTY(EditAnywhere)
     USpringArmComponent* m_pSpringArm;
 
+    UPROPERTY(EditAnywhere)
+    UParticleSystemComponent* m_pDeathParticle;
+
     FVector m_vVelocity;
     FVector m_vGravity;
 
@@ -64,5 +71,10 @@ public:
     EAnimState m_nAnimState;
 
     class UHeroMovementComponent* m_pMovementComponent;
+
+    float m_fDeathTime;
+    int m_nAlive;
+
+    AActor* m_pSkyrot;
 	
 };

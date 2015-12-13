@@ -3,6 +3,7 @@
 #include "Mirror.h"
 #include "Hero.h"
 #include "HeroMovementComponent.h"
+#include "Skyrot.h"
 
 #define DEAD_ZONE 0.2f
 #define CAMERA_ROT_SPEED 200.0f
@@ -11,6 +12,13 @@
 #define GROUNDED_CHECK_DISTANCE 20.0f
 #define HERO_GRAVITY -3000.0f
 #define DEFAULT_HERO_SPEED 1000.0f;
+
+#define DEATH_FADE_OUT_TIME 1.0f
+#define DEATH_FADE_PAUSE_TIME 2.0f
+#define DEATH_FADE_IN_TIME 2.5f
+#define DEATH_TIME_END 3.0f
+
+static const FVector SPAWN_LOC(0.0f, 0.0f, 180.0f);
 
 static UAnimSequence* s_pAnimIdle;
 static UAnimSequence* s_pAnimRun;
@@ -37,18 +45,23 @@ AHero::AHero()
 
     static ConstructorHelpers::FObjectFinder<UMaterial> ofRealMat(TEXT("Material'/Game/SkeletalMeshes/Captain/CaptainMat.CaptainMat'"));
     static ConstructorHelpers::FObjectFinder<UMaterial> ofMirrorMat(TEXT("Material'/Game/SkeletalMeshes/Captain/M_Captain_Mirror.M_Captain_Mirror'"));
+    static ConstructorHelpers::FObjectFinder<UParticleSystem> ofParticle(TEXT("ParticleSystem'/Game/Particles/Poof.Poof'"));
 
     m_pBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
     m_pBox->InitBoxExtent(FVector(30.0f, 30.0f, 100.0f));
     m_pBox->SetCollisionProfileName(TEXT("Pawn"));
 
     m_pMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+    m_pDeathParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Death Particle"));
+    m_pDeathParticle->SetRelativeRotation(FRotator(90.0f, 90.0f, 0.0f));
 
     if (ofMesh.Succeeded())
     {
         m_pMesh->SetSkeletalMesh(ofMesh.Object);
         m_pMesh->SetWorldScale3D(FVector(0.75f, 0.75f, 0.75f));
         m_pMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
+
+        m_pDeathParticle->SetTemplate(ofParticle.Object);
 
         s_pAnimIdle = ofAnimIdle.Object;
         s_pAnimRun  = ofAnimRun.Object;
@@ -67,12 +80,14 @@ AHero::AHero()
     m_pSpringArm->bEnableCameraLag = 1;
 
     m_pCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+    m_pCamera->PostProcessBlendWeight = 1.0f;
         
     // Attach components together
     RootComponent = m_pBox;
     m_pMesh->AttachTo(RootComponent);
     m_pSpringArm->AttachTo(RootComponent);
     m_pCamera->AttachTo(m_pSpringArm);
+    m_pDeathParticle->AttachTo(RootComponent);
 
     m_vVelocity = FVector::ZeroVector;
     m_vGravity = FVector(0.0f, 0.0f, HERO_GRAVITY);
@@ -89,6 +104,9 @@ AHero::AHero()
     m_nGrounded   = 0;
     m_nMoving     = 0;
     m_nMirrorMode = 0;
+    m_nAlive      = 1;
+
+    m_pSkyrot = 0;
 }
 
 // Called when the game starts or when spawned
@@ -97,12 +115,25 @@ void AHero::BeginPlay()
 	Super::BeginPlay();
 	
     m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+    m_pDeathParticle->Deactivate();
+
+    for (TActorIterator<ASkyrot> ActorItr(GetWorld()); ActorItr; ++ActorItr )
+	{
+		m_pSkyrot = *ActorItr;
+	}
 }
 
 // Called every frame
 void AHero::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+
+    if (m_nAlive == 0)
+    {
+        //  Update death sequence
+        UpdateDeathSequence(DeltaTime);
+        return;
+    }
 
     FVector vNewPos = GetActorLocation();
 
@@ -205,7 +236,8 @@ void AHero::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 
 void AHero::Jump()
 {
-   if (m_nGrounded)
+   if (m_nGrounded &&
+       m_nAlive)
    {
         m_vVelocity.Z = 2000.0f;
 
@@ -219,12 +251,13 @@ void AHero::Jump()
 
 void AHero::MoveRight(float fAxisValue)
 {
-    if (m_pMovementComponent && (m_pMovementComponent->UpdatedComponent == RootComponent))
+    if (m_pMovementComponent && (m_pMovementComponent->UpdatedComponent == RootComponent) && (FMath::Abs(fAxisValue) > DEAD_ZONE) && m_nAlive)
     {
         m_pMovementComponent->AddInputVector(FVector(1.0f, 0.0f, 0.0f) * fAxisValue);
     }
 
-    if (FMath::Abs(fAxisValue) > DEAD_ZONE)
+    if ((FMath::Abs(fAxisValue) > DEAD_ZONE)
+        && m_nAlive)
     {
         m_nMoving = 1;
     }
@@ -255,5 +288,96 @@ void AHero::SetMirrorMode(int nMirror)
 
 void AHero::Kill()
 {
-    GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Yellow, TEXT("You died :["));
+    if (m_nAlive != 0)
+    {
+        m_nAlive = 0;
+        m_fDeathTime = 0.0f;
+        m_pDeathParticle->Activate();
+        m_pMesh->SetHiddenInGame(1);
+
+        m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+        m_nAnimState = ANIM_IDLE;
+    }
+}
+
+void AHero::UpdateDeathSequence(float fDeltaTime)
+{
+    float fIntensity = 0.0f;
+
+    // Pre-fade state. Only particle effect is visible
+    if (m_fDeathTime < DEATH_FADE_OUT_TIME)
+    {
+        m_fDeathTime += fDeltaTime;
+        if (m_fDeathTime >= DEATH_FADE_OUT_TIME)
+        {
+            m_pDeathParticle->Deactivate();
+            m_pCamera->PostProcessSettings.bOverride_SceneColorTint = 1;
+            m_pCamera->PostProcessSettings.bOverride_BloomIntensity = 1;
+        }
+    }
+
+    // Fade out state, fades scene color to black
+    else if (m_fDeathTime < DEATH_FADE_PAUSE_TIME)
+    {
+        m_fDeathTime += fDeltaTime;
+
+        fIntensity = (DEATH_FADE_PAUSE_TIME - m_fDeathTime)/(DEATH_FADE_PAUSE_TIME - DEATH_FADE_OUT_TIME);
+        m_pCamera->PostProcessSettings.SceneColorTint = FLinearColor(fIntensity, fIntensity, fIntensity);
+        m_pCamera->PostProcessSettings.BloomIntensity = fIntensity;
+
+        if (m_fDeathTime > DEATH_FADE_PAUSE_TIME)
+        {
+            fIntensity = 0.0f;
+            m_pCamera->PostProcessSettings.SceneColorTint = FLinearColor(fIntensity, fIntensity, fIntensity);
+            m_pCamera->PostProcessSettings.BloomIntensity = fIntensity;
+            m_pMesh->SetHiddenInGame(0);
+            Spawn();
+        }
+    }
+
+    // Pause state, screen stays black
+    else if (m_fDeathTime < DEATH_FADE_IN_TIME)
+    {
+        m_fDeathTime += fDeltaTime;
+
+    }
+
+    // Fade in state, camera fades into normal scene color
+    else if (m_fDeathTime < DEATH_TIME_END)
+    {
+        m_fDeathTime += fDeltaTime;
+        fIntensity = 1.0f - (DEATH_TIME_END - m_fDeathTime)/(DEATH_TIME_END - DEATH_FADE_IN_TIME);
+        m_pCamera->PostProcessSettings.SceneColorTint = FLinearColor(fIntensity, fIntensity, fIntensity);
+        m_pCamera->PostProcessSettings.BloomIntensity = fIntensity;
+    }
+
+    // Death sequence over
+    else
+    {
+        m_fDeathTime += fDeltaTime;
+        m_pCamera->PostProcessSettings.bOverride_SceneColorTint = 0;
+        m_pCamera->PostProcessSettings.bOverride_BloomIntensity = 0;
+        m_nAlive = 1;
+    }
+
+}
+
+void AHero::Spawn()
+{
+    m_nGrounded = 1;
+    m_nMoving = 0;
+    m_vVelocity = FVector(0.0f, 0.0f, 0.0f);
+    
+    m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+    m_nAnimState = ANIM_IDLE;
+
+    SetActorLocation(SPAWN_LOC);
+
+    // Update the skyrot material.
+    if (Cast<ASkyrot>(m_pSkyrot) != 0)
+    {
+        Cast<ASkyrot>(m_pSkyrot)->SetMirrorMode(0);
+    }
+    // Update hero material
+    SetMirrorMode(0);
 }
