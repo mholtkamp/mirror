@@ -50,24 +50,49 @@ void AVertPlatform::Tick( float DeltaTime )
 	Super::Tick( DeltaTime );
 
     FVector vCurrentPos = GetActorLocation();
- 
-    if (vCurrentPos.Z - m_vCenter.Z > 500 )
+    FVector vNewPos;
+    if (!m_bHorizontal)
     {
-        m_fDir = -1.0f;
-        // SetActorLocation(FVector(-10.0f, 0.0f, 0.0f), 0);
-    }
-    if (vCurrentPos.Z - m_vCenter.Z <= 0)
-    {
-        m_fDir = 1.0f;
-    }
+        if (vCurrentPos.Z - m_vCenter.Z > m_fMaxDistance)
+        {
+            m_fDir = -1.0f;
+            // SetActorLocation(FVector(-10.0f, 0.0f, 0.0f), 0);
+        }
+        if (vCurrentPos.Z - m_vCenter.Z <= 0)
+        {
+            m_fDir = 1.0f;
+        }
 
-    FVector vNewPos = vCurrentPos + FVector(0.0f, 0.0f, 130.0f)*m_fDir*DeltaTime;
+        vNewPos = vCurrentPos + FVector(0.0f, 0.0f, m_fSpeed)*m_fDir*DeltaTime;
+    }
+    else
+    {
+        if (vCurrentPos.X - m_vCenter.X > m_fMaxDistance)
+        {
+            m_fDir = -1.0f;
+            // SetActorLocation(FVector(-10.0f, 0.0f, 0.0f), 0);
+        }
+        if (vCurrentPos.X - m_vCenter.X <= 0)
+        {
+            m_fDir = 1.0f;
+        }
+
+        vNewPos = vCurrentPos + FVector(m_fSpeed, 0.0f, 0.0f)*m_fDir*DeltaTime;
+    }
 
     SetActorLocation(vNewPos, 0);
 
     if (m_pHero != 0)
     {
-        vNewPos = m_pHero->GetActorLocation() + FVector(0.0f, 0.0f, 130.0f)*m_fDir*DeltaTime;
+        if (!m_bHorizontal)
+        {
+            vNewPos = m_pHero->GetActorLocation() + FVector(0.0f, 0.0f, m_fSpeed)*m_fDir*DeltaTime;
+        }
+        else
+        {
+            vNewPos = m_pHero->GetActorLocation() + FVector(m_fSpeed, 0.0f, 0.0f)*m_fDir*DeltaTime;
+        }
+        
         m_pHero->SetActorLocation(vNewPos);
     }
 }
