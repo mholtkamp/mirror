@@ -18,6 +18,9 @@ static UAnimSequence* s_pAnimJump;
 static UAnimSequence* s_pAnimFall;
 static UAnimSequence* s_pAnimFlap;
 
+static UMaterial* s_pRealMat   = 0;
+static UMaterial* s_pMirrorMat = 0;
+
 // Sets default values
 AHero::AHero()
 {
@@ -31,6 +34,9 @@ AHero::AHero()
     static ConstructorHelpers::FObjectFinder<UAnimSequence> ofAnimJump(TEXT("AnimSequence'/Game/SkeletalMeshes/Captain/captain_Anim_Armature_Jump.captain_Anim_Armature_Jump'"));
     static ConstructorHelpers::FObjectFinder<UAnimSequence> ofAnimFall(TEXT("AnimSequence'/Game/SkeletalMeshes/Captain/captain_Anim_Armature_Fall.captain_Anim_Armature_Fall'"));
     static ConstructorHelpers::FObjectFinder<UAnimSequence> ofAnimFlap(TEXT("AnimSequence'/Game/SkeletalMeshes/Captain/captain_Anim_Armature_Flap.captain_Anim_Armature_Flap'"));
+
+    static ConstructorHelpers::FObjectFinder<UMaterial> ofRealMat(TEXT("Material'/Game/SkeletalMeshes/Captain/CaptainMat.CaptainMat'"));
+    static ConstructorHelpers::FObjectFinder<UMaterial> ofMirrorMat(TEXT("Material'/Game/SkeletalMeshes/Captain/M_Captain_Mirror.M_Captain_Mirror'"));
 
     m_pBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
     m_pBox->InitBoxExtent(FVector(30.0f, 30.0f, 100.0f));
@@ -49,12 +55,16 @@ AHero::AHero()
         s_pAnimJump = ofAnimJump.Object;
         s_pAnimFall = ofAnimFall.Object;
         s_pAnimFlap = ofAnimFlap.Object;
+
+        s_pRealMat   = ofRealMat.Object;
+        s_pMirrorMat = ofMirrorMat.Object;
     }
 
     m_pSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
     m_pSpringArm->TargetArmLength = SPRINGARM_LENGTH;
     m_pSpringArm->SetRelativeRotation(FRotator(SPRINGARM_PITCH, -90, 0.0f));
     m_pSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
+    m_pSpringArm->bEnableCameraLag = 1;
 
     m_pCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
         
@@ -76,8 +86,9 @@ AHero::AHero()
     m_pMovementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Y);
     m_pMovementComponent->bConstrainToPlane = 1;
 
-    m_nGrounded = 0;
-    m_nMoving   = 0;
+    m_nGrounded   = 0;
+    m_nMoving     = 0;
+    m_nMirrorMode = 0;
 }
 
 // Called when the game starts or when spawned
@@ -226,4 +237,18 @@ void AHero::MoveRight(float fAxisValue)
 void AHero::SetVelocity(FVector vNewVel)
 {
     m_vVelocity = vNewVel;
+}
+
+void AHero::SetMirrorMode(int nMirror)
+{
+    m_nMirrorMode = nMirror;
+
+    if (nMirror == 0)
+    {
+        m_pMesh->SetMaterial(0, s_pRealMat);
+    }
+    else
+    {
+        m_pMesh->SetMaterial(0, s_pMirrorMat);
+    }
 }

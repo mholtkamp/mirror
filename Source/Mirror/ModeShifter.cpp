@@ -14,6 +14,8 @@ AModeShifter::AModeShifter()
     m_pBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
     m_pBox->SetCollisionProfileName(TEXT("OverlapAll"));
 
+    m_pHero = 0;
+
     RootComponent = m_pBox;
 
     OnActorBeginOverlap.AddDynamic(this, &AModeShifter::OnOverlapBegin);
@@ -23,7 +25,8 @@ AModeShifter::AModeShifter()
 void AModeShifter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+    m_pHero = UGameplayStatics::GetPlayerController(this,0)->GetPawn();
 }
 
 // Called every frame
@@ -47,6 +50,11 @@ void AModeShifter::OnOverlapBegin(AActor* pOther)
         else
         {
             GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Skysphere was not assigned to ModeShifter"));
+        }
+
+        if (m_pHero != 0)
+        {
+            Cast<AHero>(m_pHero)->SetMirrorMode(static_cast<int>(m_bMirror));
         }
     }
 }

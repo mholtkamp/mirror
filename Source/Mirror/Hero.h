@@ -29,6 +29,8 @@ public:
 
     void SetVelocity(FVector vNewVel);
 
+    void SetMirrorMode(int nMirror);
+
     enum EAnimState
     {
         ANIM_IDLE = 0,
@@ -54,6 +56,8 @@ public:
 
     int m_nGrounded;
     int m_nMoving;
+
+    int m_nMirrorMode;
 
     EAnimState m_nAnimState;
 
