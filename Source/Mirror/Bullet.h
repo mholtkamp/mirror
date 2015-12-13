@@ -41,5 +41,7 @@ public:
     float m_fMaxTime;
     int m_nTerminationMode;
 
+    AActor* m_pOwner;
+
     float m_fTime;
 };

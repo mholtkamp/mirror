@@ -92,16 +92,19 @@ void ABomber::FireBullet()
     FVector vSpawnLoc = GetActorLocation();
 
     ABullet* pBullet = GetWorld()->SpawnActor<ABullet>();
-    pBullet->SetActorLocation(vSpawnLoc);
-
-    // Update the transforms and overlap so it doesnt register at (0,0,0).
-    UpdateComponentTransforms();
-    UpdateOverlaps();
 
     // Set bullet stats
     pBullet->m_nTerminationMode = ABullet::TERMINATE_TIME;
     pBullet->m_fMaxTime = m_fBulletLifetime;
-    pBullet->m_vVelocity = FVector(0.0f, 0.0f, -1.0f * m_fBulletSpeed);    
+    pBullet->m_vVelocity = FVector(0.0f, 0.0f, -1.0f * m_fBulletSpeed);
+    pBullet->m_pOwner = Cast<AActor>(this);
+
+    // Set bullet location
+    pBullet->SetActorLocation(vSpawnLoc);
+
+    // Update the transforms and overlap so it doesnt register at (0,0,0).
+    pBullet->UpdateComponentTransforms();
+    pBullet->UpdateOverlaps();
 }
 
 void ABomber::OnOverlapBegin(AActor* pOther)

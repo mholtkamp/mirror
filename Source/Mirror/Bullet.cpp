@@ -26,6 +26,8 @@ ABullet::ABullet()
     m_fMinZ = -99999.0f;
     m_fMaxZ = 99999.0f;
     m_fTime = 0.0f;
+    m_fMaxTime = 10.0f;
+    m_pOwner = 0;
 
     m_nTerminationMode = TERMINATE_MIN_Z;
 
@@ -79,7 +81,6 @@ void ABullet::Tick( float DeltaTime )
 
 }
 
-
 void ABullet::OnOverlapBegin(AActor* pOther)
 {
     AHero* pHero = Cast<AHero>(pOther);
@@ -87,5 +88,11 @@ void ABullet::OnOverlapBegin(AActor* pOther)
     if (pHero != 0)
     {
         pHero->Kill();
+    }
+
+    if (pOther != m_pOwner &&
+        !IsPendingKill())
+    {
+        Destroy();
     }
 }
