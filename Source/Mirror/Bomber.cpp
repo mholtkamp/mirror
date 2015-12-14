@@ -110,6 +110,8 @@ void ABomber::FireBullet()
         // Update the transforms and overlap so it doesnt register at (0,0,0).
         pBullet->UpdateComponentTransforms();
         pBullet->UpdateOverlaps();
+
+        pBullet->m_nCollisionEnable = 1;
     }
 }
 

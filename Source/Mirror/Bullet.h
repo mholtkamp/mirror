@@ -44,4 +44,6 @@ public:
     AActor* m_pOwner;
 
     float m_fTime;
+
+    int m_nCollisionEnable;
 };

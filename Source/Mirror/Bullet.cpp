@@ -31,6 +31,8 @@ ABullet::ABullet()
 
     m_nTerminationMode = TERMINATE_MIN_Z;
 
+    m_nCollisionEnable = 0;
+
     OnActorBeginOverlap.AddDynamic(this, &ABullet::OnOverlapBegin);
 }
 
@@ -92,7 +94,8 @@ void ABullet::OnOverlapBegin(AActor* pOther)
 
     if (pOther != m_pOwner && 
         Cast<ABullet>(pOther) == 0 &&
-        !IsPendingKill())
+        !IsPendingKill() &&
+        m_nCollisionEnable != 0)
     {
         Destroy();
     }
