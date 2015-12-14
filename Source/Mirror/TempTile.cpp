@@ -2,6 +2,7 @@
 
 #include "Mirror.h"
 #include "TempTile.h"
+#include "Hero.h"
 
 #define DISAPPEAR_TIME 0.4f
 #define APPEAR_TIME 5.0f
@@ -85,12 +86,19 @@ void ATempTile::Tick( float DeltaTime )
 
 void ATempTile::OnOverlapBegin(AActor* pOther)
 {
-    m_nActive = 1;
+    if (Cast<AHero>(pOther) != 0)
+    {
+        m_nActive = 1;
+    }
+    
 }
 
 void ATempTile::OnOverlapEnd(AActor* pOther)
 {
-    m_fDisappearTime = DISAPPEAR_TIME;
+    if (Cast<AHero>(pOther) != 0)
+    {
+        m_fDisappearTime = DISAPPEAR_TIME;
+    }
 }
 
 void ATempTile::SetHidden(int nState)
