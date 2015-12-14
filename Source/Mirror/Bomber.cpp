@@ -41,7 +41,7 @@ ABomber::ABomber()
     m_fRange          = DEFAULT_RANGE;
     m_fFireTime       = DEFAULT_FIRE_TIME;
     m_fBulletLifetime = DEFAULT_BULLET_LIFETIME;
-
+    m_fTime = 0.0f;
     m_fDirection = 1.0f;
 
     RootComponent = m_pMesh;
