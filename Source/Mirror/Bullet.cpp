@@ -90,7 +90,8 @@ void ABullet::OnOverlapBegin(AActor* pOther)
         pHero->Kill();
     }
 
-    if (pOther != m_pOwner &&
+    if (pOther != m_pOwner && 
+        Cast<ABullet>(pOther) == 0 &&
         !IsPendingKill())
     {
         Destroy();

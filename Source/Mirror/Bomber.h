@@ -46,6 +46,9 @@ public:
     UPROPERTY(EditAnywhere)
     float m_fBulletLifetime;
 
+    UPROPERTY(EditAnywhere)
+    bool m_bEnableFire;
+
     FVector m_vOrigin;
     float m_fDirection;
     float m_fTime;

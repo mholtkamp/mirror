@@ -3,16 +3,16 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "FireSpitter.generated.h"
+#include "Arrow.generated.h"
 
 UCLASS()
-class MIRROR_API AFireSpitter : public AActor
+class MIRROR_API AArrow : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AFireSpitter();
+	AArrow();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -20,28 +20,19 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-    UFUNCTION()
-    void OnOverlapBegin(AActor* pOther);
+	float m_fTime;
 
-    void FireBullet();
+    UPROPERTY(EditAnywhere)
+    bool m_bPointDown;
+
+	UPROPERTY(EditAnywhere)
+    FVector m_vColor;
+
+    UPROPERTY(EditAnywhere)
+    float m_fPulseTime;
 
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* m_pMesh;
 
-    UPROPERTY(EditAnywhere)
-    UParticleSystemComponent* m_pParticle;
-
-    UPROPERTY(EditAnywhere)
-    float m_fBulletSpeed;
-
-    UPROPERTY(EditAnywhere)
-    float m_fFireRate;
-
-    float m_fFireTime;
-
-    UPROPERTY(EditAnywhere)
-    float m_fAccelerationSpeed;
-
-    FVector m_vOrigin;
-	
+    UMaterialInstanceDynamic* m_pMat;
 };
