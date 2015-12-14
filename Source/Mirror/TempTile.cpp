@@ -5,7 +5,7 @@
 #include "Hero.h"
 
 #define DISAPPEAR_TIME 0.4f
-#define APPEAR_TIME 5.0f
+#define APPEAR_TIME 3.0f
 
 // Sets default values
 ATempTile::ATempTile()

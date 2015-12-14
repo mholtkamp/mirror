@@ -64,6 +64,9 @@ public:
     UPROPERTY(EditAnywhere)
     UParticleSystemComponent* m_pDeathParticle;
 
+    UPROPERTY(EditAnywhere)
+    UAudioComponent* m_pAudioComponent;
+
     FVector m_vVelocity;
     FVector m_vGravity;
 

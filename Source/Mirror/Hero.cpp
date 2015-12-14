@@ -21,13 +21,17 @@
 #define GAME_OVER_SCREEN_TIME 2.0f
 #define GAME_OVER_ZOOM_SPEED 300.0f
 
-static const FVector SPAWN_LOC(0.0f, 0.0f, 180.0f);
+static const FVector SPAWN_LOC(-238.140808f, 0.0f, 2213.46435f);
+static const FVector MIRROR_SPAWN_LOC(39140.4218f, 0.0f, -6605.53027f);
 
 static UAnimSequence* s_pAnimIdle;
 static UAnimSequence* s_pAnimRun;
 static UAnimSequence* s_pAnimJump;
 static UAnimSequence* s_pAnimFall;
 static UAnimSequence* s_pAnimFlap;
+
+static USoundWave* s_pRealSong   = 0;
+static USoundWave* s_pMirrorSong = 0;
 
 static UMaterial* s_pRealMat   = 0;
 static UMaterial* s_pMirrorMat = 0;
@@ -50,6 +54,9 @@ AHero::AHero()
     static ConstructorHelpers::FObjectFinder<UMaterial> ofMirrorMat(TEXT("Material'/Game/SkeletalMeshes/Captain/M_Captain_Mirror.M_Captain_Mirror'"));
     static ConstructorHelpers::FObjectFinder<UParticleSystem> ofParticle(TEXT("ParticleSystem'/Game/Particles/Poof.Poof'"));
 
+    static ConstructorHelpers::FObjectFinder<USoundWave> ofRealSong(TEXT("SoundWave'/Game/Music/JungleSong16Bit.JungleSong16Bit'"));
+    static ConstructorHelpers::FObjectFinder<USoundWave> ofMirrorSong(TEXT("SoundWave'/Game/Music/MirrorSong.MirrorSong'"));
+
     m_pBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
     m_pBox->InitBoxExtent(FVector(30.0f, 30.0f, 100.0f));
     m_pBox->SetCollisionProfileName(TEXT("Pawn"));
@@ -57,6 +64,8 @@ AHero::AHero()
     m_pMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
     m_pDeathParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Death Particle"));
     m_pDeathParticle->SetRelativeRotation(FRotator(90.0f, 90.0f, 0.0f));
+
+    m_pAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Audio"));
 
     if (ofMesh.Succeeded())
     {
@@ -74,6 +83,9 @@ AHero::AHero()
 
         s_pRealMat   = ofRealMat.Object;
         s_pMirrorMat = ofMirrorMat.Object;
+
+        s_pRealSong = ofRealSong.Object;
+        s_pMirrorSong = ofMirrorSong.Object;
     }
 
     m_pSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
@@ -93,6 +105,7 @@ AHero::AHero()
     m_pSpringArm->AttachTo(RootComponent);
     m_pCamera->AttachTo(m_pSpringArm);
     m_pDeathParticle->AttachTo(RootComponent);
+    m_pAudioComponent->AttachTo(RootComponent);
 
     m_vVelocity = FVector::ZeroVector;
     m_vGravity = FVector(0.0f, 0.0f, HERO_GRAVITY);
@@ -128,6 +141,9 @@ void AHero::BeginPlay()
 	{
 		m_pSkyrot = *ActorItr;
 	}
+
+    m_pAudioComponent->Sound = s_pRealSong;
+    m_pAudioComponent->Play();
 }
 
 // Called every frame
@@ -294,15 +310,34 @@ void AHero::SetVelocity(FVector vNewVel)
 
 void AHero::SetMirrorMode(int nMirror)
 {
-    m_nMirrorMode = nMirror;
+    if (nMirror != 0)
+    {
+        m_nMirrorMode = 1;
+    }
 
     if (nMirror == 0)
     {
         m_pMesh->SetMaterial(0, s_pRealMat);
+
+        // Don't restart the real song if its already playing
+        if (m_pAudioComponent->Sound != s_pRealSong)
+        {
+            m_pAudioComponent->Stop();
+            m_pAudioComponent->Sound = s_pRealSong;
+            m_pAudioComponent->Play();
+        }
+        
     }
     else
     {
         m_pMesh->SetMaterial(0, s_pMirrorMat);
+
+        if (m_pAudioComponent->Sound != s_pMirrorSong)
+        {
+            m_pAudioComponent->Stop();
+            m_pAudioComponent->Sound = s_pMirrorSong;
+            m_pAudioComponent->Play();
+        }
     }
 }
 
@@ -392,7 +427,14 @@ void AHero::Spawn()
     m_pMesh->PlayAnimation(s_pAnimIdle, 1);
     m_nAnimState = ANIM_IDLE;
 
-    SetActorLocation(SPAWN_LOC);
+    if (m_nMirrorMode == 0)
+    {
+        SetActorLocation(SPAWN_LOC);
+    }
+    else
+    {
+        SetActorLocation(MIRROR_SPAWN_LOC);
+    }
 
     // Update the skyrot material.
     if (Cast<ASkyrot>(m_pSkyrot) != 0)
