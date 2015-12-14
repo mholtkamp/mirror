@@ -18,6 +18,9 @@
 #define DEATH_FADE_IN_TIME 2.5f
 #define DEATH_TIME_END 3.0f
 
+#define GAME_OVER_SCREEN_TIME 2.0f
+#define GAME_OVER_ZOOM_SPEED 300.0f
+
 static const FVector SPAWN_LOC(0.0f, 0.0f, 180.0f);
 
 static UAnimSequence* s_pAnimIdle;
@@ -107,6 +110,8 @@ AHero::AHero()
     m_nAlive      = 1;
 
     m_pSkyrot = 0;
+    m_nGameOver = 0;
+    m_fGameOverTime = 0.0f;
 }
 
 // Called when the game starts or when spawned
@@ -132,6 +137,12 @@ void AHero::Tick( float DeltaTime )
     {
         //  Update death sequence
         UpdateDeathSequence(DeltaTime);
+        return;
+    }
+
+    if (m_nGameOver)
+    {
+        UpdateGameOverSequence(DeltaTime);
         return;
     }
 
@@ -236,9 +247,10 @@ void AHero::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 
 void AHero::Jump()
 {
-   if (m_nGrounded &&
-       m_nAlive)
-   {
+    if (m_nGrounded &&
+        m_nAlive    &&
+        !m_nGameOver)
+    {
         m_vVelocity.Z = 2000.0f;
 
         m_pMesh->SetAnimation(s_pAnimFall);
@@ -246,18 +258,24 @@ void AHero::Jump()
 
         m_nAnimState = ANIM_JUMP;
         m_nGrounded = 0;
-   }
+    }
+    else if (m_nGameOver &&
+             m_fGameOverTime > GAME_OVER_SCREEN_TIME)
+    {
+        UGameplayStatics::OpenLevel(this, TEXT("MenuMap"));
+    }
 }
 
 void AHero::MoveRight(float fAxisValue)
 {
-    if (m_pMovementComponent && (m_pMovementComponent->UpdatedComponent == RootComponent) && (FMath::Abs(fAxisValue) > DEAD_ZONE) && m_nAlive)
+    if (m_pMovementComponent && (m_pMovementComponent->UpdatedComponent == RootComponent) && (FMath::Abs(fAxisValue) > DEAD_ZONE) && m_nAlive && !m_nGameOver)
     {
         m_pMovementComponent->AddInputVector(FVector(1.0f, 0.0f, 0.0f) * fAxisValue);
     }
 
     if ((FMath::Abs(fAxisValue) > DEAD_ZONE)
-        && m_nAlive)
+        && m_nAlive
+        && !m_nGameOver)
     {
         m_nMoving = 1;
     }
@@ -288,7 +306,8 @@ void AHero::SetMirrorMode(int nMirror)
 
 void AHero::Kill()
 {
-    if (m_nAlive != 0)
+    if (m_nAlive    != 0 &&
+        m_nGameOver == 0)
     {
         m_nAlive = 0;
         m_fDeathTime = 0.0f;
@@ -380,4 +399,38 @@ void AHero::Spawn()
     }
     // Update hero material
     SetMirrorMode(0);
+}
+
+void AHero::SetGameOver()
+{
+    m_nGameOver = 1;
+    m_fGameOverTime = 0.0f;
+    m_nMoving = 0;
+
+    m_pMesh->PlayAnimation(s_pAnimIdle, 1);
+    m_nAnimState = ANIM_IDLE;
+}
+
+void AHero::UpdateGameOverSequence(float fDeltaTime)
+{
+     // Apply gravity
+    m_vVelocity += m_vGravity * fDeltaTime;
+
+    // Move along z axis
+    FHitResult hit;
+    FVector vNewPos = GetActorLocation();
+    vNewPos.Z += m_vVelocity.Z * fDeltaTime;
+    SetActorLocation(vNewPos, 1, &hit);
+
+    if (hit.Actor != 0)
+    {
+        m_vVelocity.Z = 0.0f;
+        m_nGrounded = 1;
+    }
+
+    if (m_fGameOverTime < GAME_OVER_SCREEN_TIME)
+    {
+        m_fGameOverTime += fDeltaTime;
+        m_pSpringArm->TargetArmLength = m_pSpringArm->TargetArmLength - fDeltaTime * GAME_OVER_ZOOM_SPEED;
+    }
 }

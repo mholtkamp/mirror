@@ -37,6 +37,10 @@ public:
 
     void Spawn();
 
+    void SetGameOver();
+
+    void UpdateGameOverSequence(float fDeltaTime);
+
     enum EAnimState
     {
         ANIM_IDLE = 0,
@@ -76,5 +80,8 @@ public:
     int m_nAlive;
 
     AActor* m_pSkyrot;
+
+    int m_nGameOver;
+    float m_fGameOverTime;
 	
 };
